@@ -397,7 +397,12 @@ saga_cmd ta_hydrology 21 -SLOPE=%desFol%slopeRadians.sgrd -AREA=%desFol%ca.sgrd 
 echo %date%:%time%
 
 
-REM ####### Compress files and convert to .tif.  This achieves about a 60% compression ratio. 
+REM ####### Compress files and convert to .tif.  This achieves about a 60% compression ratio. Because this achieves such a good compression I am somewhat hesitant to consider converting everything from float to integer (UInt16 or INT16) for a few reasons even though this is advocated by some of the group. 
+REM The main reason is that converting format types is convienent for reducing file sizes for storing and sharing, but the compression already does a pretty good job. 
+REM Secondly, users will have to (or at least should) reconvert all files to their original units to use these, which necessitates needing large file sizes anyway. 
+REM Thirdly, I anticipate that most users of this data will only download a few HUCs that they are interested in and not the entire dataset. I anticipate that the few HUCs needed wont be a huge burden anyway. 
+REM Fourthly, those of use who want the whole dataset probably already have the storage and computational power to handle all of this. 
+REM Finally, applying a conversion could be done with Travis script, but I don't have the time or skill to put this on the HPC right now and I just want to get this done. 
 
 REM Compress geomorphons first because they are byte instead of float32. I'm using packbits because it has a fairly good compression ratio, but relativley fast read speed for byte format. 
 REM https://kokoalberti.com/articles/geotiff-compression-optimization-guide/
