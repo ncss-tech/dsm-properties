@@ -426,8 +426,8 @@ REM %%~nx just means the file name without the extension.
 setlocal enabledelayedexpansion enableextensions
 for /f %%x in ('dir /b *.sdat') do (
 echo now converting and compressing %%x 
-REM zstd predictor 3 zlevel = 9 writes at the same speed and achieves about the same compression ratio as compress=deflate, but reads much faster. Since I will only write this once, but read this multiple times I think read speed is probably the most important. 
-gdalwarp -co NUM_THREADS=ALL_CPUS -co COMPRESS=ZSTD -co PREDICTOR=3 -co ZLEVEL=9 -co TILED=YES -tr 30 30 -r cubic %%x %desFol%%%~nx.tif
+REM COMPRESS=ZTSD -co PREDICTOR=3 and ZLEVEL=9 writes at the same speed and achieves about the same compression ratio as compress=deflate, but reads much faster. However; DO NOT USE IT as the r raster package can not read it! I tested multiple compression algorithms, but COMPRESS=DEFLATE, PREDICTOR=3 achieves a compression almost as good at ZSTD. 
+gdalwarp -co NUM_THREADS=ALL_CPUS -co COMPRESS=DEFLATE -co PREDICTOR=3 -co TILED=YES -tr 30 30 -r cubic %%x %desFol%%%~nx.tif
 )
 
 REM Remove intermediate saga grid files since I only want geotiffs.
