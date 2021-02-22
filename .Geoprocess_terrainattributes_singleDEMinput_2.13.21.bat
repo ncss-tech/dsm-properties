@@ -212,20 +212,18 @@ saga_cmd grid_tools 12 -INPUT=%desFol%vd_%%i.sgrd -OUTPUT=%desFol%vd_%%i.sgrd -M
 echo %date%:%time%
 
 
-
-
-
 REM Tool: Geomorphons ##########
 REM input: elevation
 REM parameters:
 REM r.geomorphons in grassGIS has more parameters adjustable by the user 
  REM - THRESHOLD, The relief threshold is a minimum value of the line-of-sight angle (zenith or nadir) that is considered significantly different from the horizon" (Stepinski and Jasiewicz 2011). This parameter has a large influence on the size of the 'flat' areas. A larger threshold value will result in larger areas of the 'flat' class at the expense of the 'slope' classes. I think that setting this to a value to 1 (one degree) makes the most sense and is the most reproducable. I checked this by comparing geomorphons with threhods of 1, 2, and 4 against airphotos. I thought that 2 and 4 over predicted the 'flat' area, although flat vs slope may not be a huge distinction for soil distribution. I would increase this parameter (rather than the search radius) if you feel that the 'flat' class is too small in extent. 
  REM A threshold of 1 means that for a 30m cell size, the difference in grid cell elevations would have to be 0.5 m before the difference was recognozed. 1 degree slope = arctan(rise/run). To figure out the 'rise' in this equation we can replace rise with X and the run with 30 m. Thus the equation becomes 1 = arctan(x/30). Solving for x results in: 30*tangent(1) = x (or 0.5 m). Using the same equation, a 1 degree threshold with a 10m DEM would result in a 0.17 m change before the elevation difference was recognized. This makes it a bit easier to interpret which threshold value should be chosen if you know something about the landscape. I would suspect, that small changes in elevation are very important for some landscapes (e.g., Gilgai), but these would not be detectable with a 30 (or even a 10m) DEM. However; if you are working in a very flat landscape, Geomorphons might not be the best tool anyway.  
- REM -RADIUS, Search radius (in map units I think, not in number of cells). "The search radius is the maximum allowable distance for calculation of zenith and nadir angles". The radius makes sense to calculate these for the same steps as travis' relative elevation, however in inital tests on one HUC12 watershed the results with L of 1 to 16 were equivalent. However; this parameter has no effect on the results if -METHOD = 0 since this method uses a different parameter (see below). Radius values of 90 and 128 has very similar values.
+ REM -RADIUS, Search radius (in map units I believe, not in number of cells). "The search radius is the maximum allowable distance for calculation of zenith and nadir angles". The radius makes sense to calculate these for the same steps as travis' relative elevation, however in inital tests on one HUC12 watershed the results with L of 1 to 16 were equivalent. However; this parameter has no effect on the results if -METHOD = 0 since this method uses a different parameter (see below). Radius values of 90 and 128 has very similar values. To keep this consistent 
+  REM I chose to use radius values of 30, 300, and 3000. There is not much difference between 300 and 3000 in areas with relief, but the difference becomes more pronounced in areas with relativley low relief. Because radius values are given in map units (ie. meters) then a value of 30 is only the four adjacent cells and not the full eight neighboorhood. To include the full eight neighboorhood it is possible to use the pythagorean theorem to solve for the distance from the center cell. This results in a distance of 42.4 m. However; I don't know exactly how geormophon algorithm accounts for cell centers so I think that I will just use radius values that are multiples of the cell size. 
  REM -METHOD, 0 = multiscale, 1 = line tracing. If 0, then use the -DLEVEL parameter, if 1 then use the -RADIUS parameter. 
  REM -DLEVEL, The multi-scale factor. A multi-scale factor of 3, 9, and 64 (with different -RADIUS just to check) did not make any difference in the results.  
 REM processing notes: line tracing (radial limit = 32) and multiscale (9 and 32) had a correlation of 50.1% This is the largest difference between any of the parameters, thus it seems that this is a critical choice. Since they produce two very different results I think that I will do both. I will do one multiscale (-DLEVEL 3, since this parameters doesn't make much difference), and one small and one large -RADIUS
-set geomorph_L= 3 90
+set geomorph_L=30 300 3000
 for %%i in (%geomorph_L%) do (
 echo now calculating geomorphons for radius %%i
 saga_cmd ta_lighting 8 -DEM=%basedem% -GEOMORPHONS=%desFol%gmrph_radius_%%i.sgrd -THRESHOLD=1.000000 -RADIUS=%%i -METHOD=1
@@ -470,6 +468,9 @@ REM parameters: w, t, e (see links above for further explanation).
 
 REM REM LS Factor
 REM LS Factor requires slope and catchment area. I decided against this because I feel that the input parameters (rill/interrill erosivity and stability) are mostly site-specific . Also, this is meant for run off modeling, not digital soil mapping or geomorphological mapping so it doesn't make a whole lot of sense to calculate it.  
+
+REM Morphometric Protection Index 
+REM MPI is the same as positive openness according to the SAGA tool reference. Did not use since the positive openess tool gives both positivie and negative openess.  
 
 REM Melton Ruggedness Index
 REM this index is "According to Melton (1965), is a slope index that provides specialized representation of relief ruggedness within the basin". This index has been found useful for discriminating fluvial fans from debries-flow fans (Marchi and Fontana 2005).
