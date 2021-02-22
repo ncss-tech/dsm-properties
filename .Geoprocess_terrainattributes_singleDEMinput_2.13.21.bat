@@ -35,7 +35,7 @@ REM the input DEM in saga format.
 set basedem=C:\geoproc_test\Town_of_Madrid_Saint_Johns_Bayoufel.sdat
 REM The \ after the folder path is very important to ensure that files go where I think they should.
 set desFol=C:\geoproc_test\
-REM neighboorhood sizes overwhich to calculate derivatives. 128 took a long time and for a 30m DEM would be 3.8 km, which I'm thinking is too large for the additional processing time required. This is used for many covariates so it makes sense to set it here. I also decided not to use a 64 neighbohood because dropping it cut processing time almost in half! 
+REM neighboorhood sizes overwhich to calculate derivatives. 128 took a long time and for a 30m DEM would be 3.8 km, which I'm thinking is too large for the additional processing time required. This is used for many covariates so it makes sense to set it here. I also decided not to use a 64 neighborhood because dropping it cut processing time almost in half! 
 set neighbors=2 4 8 16 32
 REM valley depth and vertical distance to channel network need a strahler order, set these here. Unfortunatley the base-level interpolation has some issues which are most egregious at a strahler order = 1, so I only use >=2. I also do not use strahler orders > 6 because a few tests seem to indicate that strahler order of 7 was probably too high a value for HUC6 watersheds. It would probably be appropriate at a HUC4 watershed scale.  
 set orders=2 3 4 5 6
@@ -221,7 +221,7 @@ REM r.geomorphons in grassGIS has more parameters adjustable by the user
  REM -RADIUS, Search radius (in map units I believe, not in number of cells). "The search radius is the maximum allowable distance for calculation of zenith and nadir angles". The radius makes sense to calculate these for the same steps as travis' relative elevation, however in inital tests on one HUC12 watershed the results with L of 1 to 16 were equivalent. However; this parameter has no effect on the results if -METHOD = 0 since this method uses a different parameter (see below). Radius values of 90 and 128 has very similar values. To keep this consistent 
   REM I chose to use radius values of 30, 300, and 3000. There is not much difference between 300 and 3000 in areas with relief, but the difference becomes more pronounced in areas with relativley low relief. Because radius values are given in map units (ie. meters) then a value of 30 is only the four adjacent cells and not the full eight neighboorhood. To include the full eight neighboorhood it is possible to use the pythagorean theorem to solve for the distance from the center cell. This results in a distance of 42.4 m. However; I don't know exactly how geormophon algorithm accounts for cell centers so I think that I will just use radius values that are multiples of the cell size. 
  REM -METHOD, 0 = multiscale, 1 = line tracing. If 0, then use the -DLEVEL parameter, if 1 then use the -RADIUS parameter. 
- REM -DLEVEL, The multi-scale factor. A multi-scale factor of 3, 9, and 64 (with different -RADIUS just to check) did not make any difference in the results.  
+ REM -DLEVEL, The multi-scale factor. A multi-scale factor of 3, 9, and 64 (with different -RADIUS just to check) did not make any difference in the results. However, a multiscale factor of 300 resulted in much more local results (it seems that the higher the dlevel the more local the results are). A factor of 3000 was too large on my test DEM so I just went with 300.   
 REM processing notes: line tracing (radial limit = 32) and multiscale (9 and 32) had a correlation of 50.1% This is the largest difference between any of the parameters, thus it seems that this is a critical choice. Since they produce two very different results I think that I will do both. I will do one multiscale (-DLEVEL 3, since this parameters doesn't make much difference), and one small and one large -RADIUS
 set geomorph_L=30 300 3000
 for %%i in (%geomorph_L%) do (
@@ -230,8 +230,11 @@ saga_cmd ta_lighting 8 -DEM=%basedem% -GEOMORPHONS=%desFol%gmrph_radius_%%i.sgrd
 )
 echo %date%:%time%
 REM Multiscale Geomorphons
+set geomorph_M=30 300
+for %%i in (%geomorph_L%) do (
 echo now calculating multiscale geomorphons
 saga_cmd ta_lighting 8 -DEM=%basedem% -GEOMORPHONS=%desFol%gmrph_ms.sgrd -THRESHOLD=1.000000 -METHOD=0 -DLEVEL=3.0
+)
 echo %date%:%time%
 
 
@@ -240,7 +243,7 @@ REM Uses a multi-scale approach by fitting quadratic parameters to any size wind
 REM Longitudinal curvature is the profile curvature intersecting with the plane defined by the surface normal and maximum gradient direction. Cross-sectional curvature is the tangential curvature intersecting with the plane defined by the surface normal and a tangent to the contour - perpendicular to maximum gradient direction. Minimum curvature is measured in direction perpendicular to the direction of of maximum curvature. The maximum curvature is measured in any direction. 
 REM input: elevation
 REM Parameters:
- REM -SIZE: radius = size of processing window (N = 1 + 2r), where r is the radius given as number of cells. This seems like a different definition of neighborhood size than used in the other tools, but it works out the same. To prove this to myself it is possible to rearange the equation to solve for the radius' with a given neighbohood size ((N-1)/2) = r. Substituting the following neighborhood sizes (N) into the equation: 1, 2, 4, 8, 16, 32, 64; results in a radius of 0, 0.5, 1.5, 3.5, 7.5, 15.5, and 31.5. Rounding these to the nearest value results in an input radius of 1,2,4,8,16,32, approximatley the same as the neighborhood sizes used in the other tools (perhaps the other tools use the same neighborhood calculation?).  
+ REM -SIZE: radius = size of processing window (N = 1 + 2r), where r is the radius given as number of cells. This seems like a different definition of neighborhood size than used in the other tools, but it works out the same. To prove this to myself it is possible to rearange the equation to solve for the radius' with a given neighborhood size ((N-1)/2) = r. Substituting the following neighborhood sizes (N) into the equation: 1, 2, 4, 8, 16, 32, 64; results in a radius of 0, 0.5, 1.5, 3.5, 7.5, 15.5, and 31.5. Rounding these to the nearest value results in an input radius of 1,2,4,8,16,32, approximatley the same as the neighborhood sizes used in the other tools (perhaps the other tools use the same neighborhood calculation?).  
  REM -TOL_SLOPE: slopes less than this will be considered flat
  REM -TOL_CURVE: curvatures less than this value will be considered flat.
  REM -EXPONENT:
@@ -353,14 +356,14 @@ REM Saga wetness index, catchment area, modified catchment area, and catchment s
 REM Explanation: SWI = lower values = wetter.
  REM input: Elevation 
  REM parameters:
- REM Some explanation of parameters, but didn't match my experience https://gis.stackexchange.com/questions/304535/choosing-parameters-for-saga-wetness-index
- REM set suction 1 10 100 etc. (1 is too low because it results in a null modified catchment area raster). probably worth starting with 10 and then increasing  to 1000 then 10000). Changing suction does not change catchment area or catchment slope, but it drastically changes the modified catchment area. Smaller values means higher suction. Smaller values result in a higher wetness index values. I decided to run this with only extreme values 10 and 10000 because the correlation between the other suction values were fairly high and because this takes so long to run that I want to minimize run time. 
- REM Type of Area: 0 = total catchment area, 1 = square root of catchment area, 2 = specific catchment area. I tested these and found that the choice of this parameter has absolutlely no effect on the catchment area, the modified catchment area, or (unsurprisingly) catchment slope. It had only a minor efect on the wetness index. Since TWI and SPI need specific catchment area as input, I chose to use specific catchment area.   
- REM Type of slope: catchment slope is (I think) the average slope of the catchment area. Local slope is the slope for each cell. I found that local slope was visually a better choice because it produced wetness patterns that were more consistent with the landscape. In particular, I found that local slope better represented stream channels than did catchment slope. Local slope also produced more intuitive wetness patterns so I'm going with local slope. 
- REM Minimum slope: "all values smaller than this value will be set to this value. A smaller value, e.g. 0, leads to higher WI maximum values" (webpage above). I chose to leave this as zero since I thought this was the most reproducible across large areas.  
- REM Offset slope: A small value added to each slope. I'm fairly sure that this is just to avoid division by zero in the wetness index calculation. Default is 0.1, but I chose to set to 0.01. This does have an effect on the wettest areas, but does increase all index values slightly (generally in the second decimal place for drier areas, a larger increase in wetter areas - sometimes as much as 1.4 units at the outlet of a HUC 12). I think that a smaller number is better because it is closer to the actual slope if the slope is zero.   
- REM Slope weighting = I think this is if you want slope to have more importance in the calculation. Left as 1 (no weighting). 
-REM Notes: Using different suctions results in creating the catchment area and catchment slope twice, but it is relativley quick. Since the output is the same, the catchment area and slope from the second run overwrites the output from the first run.  
+	REM Some explanation of parameters, but didn't match my experience https://gis.stackexchange.com/questions/304535/choosing-parameters-for-saga-wetness-index
+	REM -SUCTION; set suction 1 10 100 etc. (1 is too low because it results in a null modified catchment area raster). probably worth starting with 10 and then increasing  to 1000 then 10000). Changing suction does not change catchment area or catchment slope, but it drastically changes the modified catchment area. Smaller values means higher suction. Smaller values result in a higher wetness index values. I decided to run this with only extreme values 10 and 10000 because the correlation between the other suction values were fairly high and because this takes so long to run that I want to minimize run time. 
+	REM _AREA_TYPE; Type of Area: 0 = total catchment area, 1 = square root of catchment area, 2 = specific catchment area. I tested these and found that the choice of this parameter has absolutlely no effect on the catchment area, the modified catchment area, or (unsurprisingly) catchment slope. It had only a minor efect on the wetness index. Since TWI and SPI need specific catchment area as input, I chose to use specific catchment area.   
+	REM -SLOPE_TYPE; Type of slope: catchment slope is (I think) the average slope of the catchment area. Local slope is the slope for each cell. I found that local slope was visually a better choice because it produced wetness patterns that were more consistent with the landscape. In particular, I found that local slope better represented stream channels than did catchment slope. Local slope also produced more intuitive wetness patterns so I'm going with local slope. 
+	REM -SLOPE_MIN; Minimum slope: "all values smaller than this value will be set to this value. A smaller value, e.g. 0, leads to higher WI maximum values" (webpage above). I chose to leave this as zero since I thought this was the most reproducible across large areas.  
+	REM -SLOPE_OFF; Offset slope: A small value added to each slope. I'm fairly sure that this is just to avoid division by zero in the wetness index calculation. Default is 0.1, but I chose to set to 0.01. This does have an effect on the wettest areas, but does increase all index values slightly (generally in the second decimal place for drier areas, a larger increase in wetter areas - sometimes as much as 1.4 units at the outlet of a HUC 12). I think that a smaller number is better because it is closer to the actual slope if the slope is zero.   
+	REM -SLOPE_WEIGHT; Slope weighting = I think this is if you want slope to have more importance in the calculation. Left as 1 (no weighting). 
+REM Notes: Using different suctions results in creating the catchment area and catchment slope twice, but it is relativley quick. Since the output is the same, the catchment area and slope from the second run overwrites the output from the first run. It would be very convienent if it were possible to specify an existing dataset as input to the catchment area and slope to avoid double calculation, but this is not possible.   
 set suction=10 10000
 for %%i in (%suction%) do (
 echo now calculating SWI for a suction of %%i 
@@ -389,11 +392,25 @@ REM Stream Power Index ##########
 REM Explanation:
 REM input: slope (units of radians) and catchment area (as specific catchment area)
 REM Parameters:
- REM Area Conversion -CONV. 0 = no conversion (areas already give as specific catchment area, 1 = 1/cell size (psuedo specific catchment area). Since specific catchment area is already generated, set -CONV=0. 
+ REM -CONV; Area Conversion. 0 = no conversion (areas already give as specific catchment area, 1 = 1/cell size (psuedo specific catchment area). Since specific catchment area is already generated, set -CONV=0. 
 echo now calculating stream power index 
 saga_cmd ta_hydrology 21 -SLOPE=%desFol%slopeRadians.sgrd -AREA=%desFol%ca.sgrd -SPI=%desFol%spi.sgrd -CONV=0
 echo %date%:%time%
 
+
+REM Vector Rugedness Measure
+REM Explanation: This "quantifies terrain ruggedness by measuring the variation in a three-dimensional orientation of grid cells within a moving window. Slope and aspect are decomposed into 3-dimensional vector components (in the x, y, and z directions) using standard vector analysis in a user-specified moving window size (3x3). The vector ruggedness measure quantifies local variation of slope in the terrain more independently than the topographic position index and terrain ruggedness index methods. Values range from 0 to 1 in flat to rugged regions, respectively" (Amatulli et al 2019. Geomorpho90m). 
+REM input: Elevation 
+REM Parameters
+	REM -MODE; 0=square, 1 = circle. I chose a circle because it seems more intuiative and it was the default. 
+	REM -RADIUS; Radius in number of cells. I think that this makes sense to use the same neighborhood as other covariates. I tested a radius of 300, but that ran SUPER slow. 
+	REM -DW_WEIGHTING; distance weighting. 0 = no weighting, 1 = inverse distance to a power, 2 = exponential, 3 = gaussian. No reason to choose any of these weighting schemes. Choosing anything other than 0 allows the specification of individual parameters for each weighting scheme. 
+REM Output: Vector Ruggedness Measure
+for %%i in (%neighbors%) do (
+echo now calculating VRM for a radius of %%i 
+saga_cmd ta_morphometry 17 -DEM=%basedem% -VRM=%desFol%vrm_%%i.sgrd -MODE=1 -RADIUS=%%i -DW_WEIGHTING=0
+)
+echo %date%:%time%
 
 REM ####### Compress files and convert to .tif.  This achieves about a 60% compression ratio. Because this achieves such a good compression I am somewhat hesitant to consider converting everything from float to integer (UInt16 or INT16) for a few reasons even though this is advocated by some of the group. 
 REM The main reason is that converting format types is convienent for reducing file sizes for storing and sharing, but the compression already does a pretty good job. 
