@@ -1,0 +1,2 @@
+New Value	Minimum	Maximum
+0.000000	-1000.000000	0.000000
