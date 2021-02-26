@@ -249,9 +249,21 @@ REM Parameters:
  REM -EXPONENT:
  REM -ZSCALE: 
  REM -CONSTRAIN: 
+REM Output: 
+ REM -FEATURES; Morphometric features; another terrain classification 
+ REM -ELEVATION: Generalised elevation, ie. a smoothed input DEM. I'm not really sure that this is useful, but since it gets calculated anyway I decided to include it. 
+ REM -SLOPE; Slope is the magnitude of maximum gradient. It is given for steepest slope angle and measured in degrees. 
+ REM -ASPECT; Aspect is the direction of maximum gradient. 
+ REM -PROFC; Profile curvature is the curvature intersecting with the plane defined by the Z axis and maximum gradient direction. Positive values describe convex profile curvature, negative values concave profile. 
+ REM -PLANC;-Plan curvature is the horizontal curvature, intersecting with the XY plane. 
+ REM -LONGC; Longitudinal curvature is the profile curvature intersecting with the plane defined by the surface normal and maximum gradient direction. 
+ REM -CROSC; Cross-sectional curvature is the tangential curvature intersecting with the plane defined by the surface normal and a tangent to the contour - perpendicular to maximum gradient direction. 
+ REM -MAXIC; Maximum curvature, the maximum curvature measured in any direction.
+ REM -MINIC; Minimum curvature is measured in direction perpendicular to the direction of of maximum curvature. 
+ 
 for %%i in (%neighbors%) do ( 
 echo now calculating multiscale morphometric features for a neighborhood of %%i 
-saga_cmd ta_morphometry 23 -DEM=%basedem% -SLOPE=%desFol%sl_%%i.sgrd -PROFC=%desFol%profc_%%i.sgrd -PLANC=%desFol%planc_%%i.sgrd -LONGC=%desFol%longc_%%i.sgrd -CROSC=%desFol%crosc_%%i.sgrd -MAXIC=%desFol%maxc_%%i.sgrd -MINIC=%desFol%minc_%%i.sgrd -SIZE=%%i -TOL_SLOPE=1.000000 -TOL_CURVE=0.000100 -EXPONENT=0.000000 -ZSCALE=1.000000 -CONSTRAIN=0
+saga_cmd ta_morphometry 23 -DEM=%basedem% -FEATURES=%desFol%morpfeat_%%i.sgrd -ELEVATION=%desFol%genelev_%%i.sgrd -ASPECT=%desFol%aspct_%%i.sgrd -SLOPE=%desFol%sl_%%i.sgrd -PROFC=%desFol%profc_%%i.sgrd -PLANC=%desFol%planc_%%i.sgrd -LONGC=%desFol%longc_%%i.sgrd -CROSC=%desFol%crosc_%%i.sgrd -MAXIC=%desFol%maxc_%%i.sgrd -MINIC=%desFol%minc_%%i.sgrd -SIZE=%%i -TOL_SLOPE=1.000000 -TOL_CURVE=0.000100 -EXPONENT=0.000000 -ZSCALE=1.000000 -CONSTRAIN=0
 )
 echo %date%:%time%
 
