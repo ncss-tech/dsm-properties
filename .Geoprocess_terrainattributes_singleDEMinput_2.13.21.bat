@@ -246,9 +246,9 @@ REM Parameters:
  REM -SIZE: radius = size of processing window (N = 1 + 2r), where r is the radius given as number of cells. This seems like a different definition of neighborhood size than used in the other tools, but it works out the same. To prove this to myself it is possible to rearange the equation to solve for the radius' with a given neighborhood size ((N-1)/2) = r. Substituting the following neighborhood sizes (N) into the equation: 1, 2, 4, 8, 16, 32, 64; results in a radius of 0, 0.5, 1.5, 3.5, 7.5, 15.5, and 31.5. Rounding these to the nearest value results in an input radius of 1,2,4,8,16,32, approximatley the same as the neighborhood sizes used in the other tools (perhaps the other tools use the same neighborhood calculation?).  
  REM -TOL_SLOPE: slopes less than this will be considered flat
  REM -TOL_CURVE: curvatures less than this value will be considered flat.
- REM -EXPONENT:
- REM -ZSCALE: 
- REM -CONSTRAIN: 
+ REM -EXPONENT: distance weighting. Leave at 0 if no distance weighting desired. 
+ REM -ZSCALE: 1 if z-units (e.g., meters) are the same as x,y coordinates, otherwise use a conversion factor. left as 1.
+ REM -CONSTRAIN: constrain through central cell (boolean). left as 0 (yes, constrain through central cell). 
 REM Output: 
  REM -FEATURES; Morphometric features; another terrain classification 
  REM -ELEVATION: Generalised elevation, ie. a smoothed input DEM. I'm not really sure that this is useful, but since it gets calculated anyway I decided to include it. 
