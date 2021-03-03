@@ -269,11 +269,34 @@ echo %date%:%time%
 
 
 REM Tool: Focal Statistics ##########
-REM run for several Kernal_radius values. Radius values are given in number of cells
-REM Kernel_type = 1 means circle, -Bcenter = 1 means include center cell, -DW_WEIGHTING=0 means no distance weighting
+REM Input: Elevation
+REM Parameters
+  REM run for several Kernal_radius values. Radius values are given in number of cells
+  REM -KERNEL_TYPE; shape of window; 1 = circle, 0 = square. Used square to keep this the same as other covariates. 
+  REM -KERNEL_RADIUS; size of radius
+  REM -BCENTER; 1 means include center cell, 
+  REM -DW_WEIGHTING=0 means no distance weighting
+REM Output
+  REM -MEAN; mean elevation over neighborhood
+  REM -MIN; minimum elevation over neighborhood
+  REM -DIFF; difference from mean elevation
+  REM -DEVMEAN; deviance from mean elevation
+  REM -MAX=maximum elevation over neighborhood 
+  REM -RANGE=range of elevation over neighborhood 
+  REM -STDDEV=standard deivation of elevation over neighborhood 
+  REM -VARIANCE=variance of elevation over neighborhood 
+  REM -SUM=sum of elevation over neighborhood 
+  REM -PERCENT=percentile elvation (I don't really understand this).  
+  REM -MEDIAN=median elevation over neighborhood 
+  REM -MINORITY=minority elevation over neighborhood
+  REM -MAJORITY=majority elevation over neighborhood 
+  
+REM Note: There are quite a large number of possible summary statistics that could be calculated, however; mean, median, maximum, minimum, minority, and majority produce raster output that have correlations >95% as excpected, thus this script only saves the mean and minimum focal stats as these are needed for the relative elevation calculations. Sum is a funny derivative since I'm not sure how summing all of the values would be useful in this case, and it produces quite odd results. Variance and Standard deviation are very similar (as expected), so I just kept the standard deviation since it keeps the same units. Range and variance are similar, but different enough to keep. The percentile is a raster that I don't fully understand. Is this the percentile of the center cell in the neighborhood? At the very least this seems to do a good job of highlighting errors in the DEM. 
+
 for %%i in (%neighbors%) do ( 
 echo now calculating multiscale focal statistics for a size %%i neighborhood
-saga_cmd statistics_grid 1 -GRID=%basedem% -MEAN=%desFol%meanelev_%%i.sgrd -MIN=%desFol%minelev_%%i.sgrd -DIFF=%desFol%diffmeanelev_%%i.sgrd -DEVMEAN=%desFol%devmeanelev_%%i.sgrd -BCENTER=1 -KERNEL_TYPE=1 -KERNEL_RADIUS=%%i -DW_WEIGHTING=0
+saga_cmd statistics_grid 1 -GRID=%basedem% -MEAN=%desFol%meanelev_%%i.sgrd -MIN=%desFol%minelev_%%i.sgrd -DIFF=%desFol%diffmeanelev_%%i.sgrd 
+-DEVMEAN=%desFol%devmeanelev_%%i.sgrd -BCENTER=1 -KERNEL_TYPE=0 -KERNEL_RADIUS=%%i -DW_WEIGHTING=0
 )
 echo %date%:%time%
 
