@@ -52,7 +52,7 @@ REM Input: DEM
 REM Parameters:
  REM -METHOD
  REM -POSITION: The suns position. 0 = azimuth and height, 1 = date and time. 
- REM -AZIMUTH (if position = 0): Direction from north. 255 = southwest
+ REM -AZIMUTH (if position = 0): Direction from north. 335 = northwest (makes the most visually appealing hillshades)
  REM -DECLINATION (if position = 0): Angle above horizon. 45 makes a nice hillshade.
  REM -DATE (if position = 1): The day of the year to make the calculation.
  REM -TIME (if position = 1): The number of hours to calculate for. 
@@ -64,8 +64,8 @@ REM Notes:
  REM The -METHOD parameter has five options. I found that the "standard" and "limited max" arguments produced the same results (r2 = 100). "With shadows" only crashed saga (and is just a mask anyway). "Ambient occlusion" took a long time to run and produced artifacts, it also had several different parameters making this more difficult and not a good option. "Combined shading" multiplies the standard method by the normalized slope. I chose both "standard" and "combined shading" with -POSITION = 0 to produce hillshades for visual effects because I thought that these were most useful for vizulizing the landscape. These two terrain derivatives are intended for visulization and not necessarily analysis. 
 
 REM Visual hillshades
-saga_cmd ta_lighting 0 -ELEVATION=%basedem% -SHADE=%desFol%hs_st.sgrd -METHOD=0 -POSITION=0 -AZIMUTH=255.000000 -DECLINATION=45.000000 -EXAGGERATION=1.000000 -UNIT=1
-saga_cmd ta_lighting 0 -ELEVATION=%basedem% -SHADE=%desFol%hs_cs.sgrd -METHOD=5 -POSITION=0 -AZIMUTH=255.000000 -DECLINATION=45.000000 -EXAGGERATION=1.000000 -UNIT=1
+saga_cmd ta_lighting 0 -ELEVATION=%basedem% -SHADE=%desFol%hs_st.sgrd -METHOD=0 -POSITION=0 -AZIMUTH=335.000000 -DECLINATION=45.000000 -EXAGGERATION=1.000000 -UNIT=1
+saga_cmd ta_lighting 0 -ELEVATION=%basedem% -SHADE=%desFol%hs_cs.sgrd -METHOD=5 -POSITION=0 -AZIMUTH=335.000000 -DECLINATION=45.000000 -EXAGGERATION=1.000000 -UNIT=1
 echo %date%:%time%
 
 
@@ -290,12 +290,10 @@ REM Output
   REM -MEDIAN=median elevation over neighborhood 
   REM -MINORITY=minority elevation over neighborhood
   REM -MAJORITY=majority elevation over neighborhood 
-  
-REM Note: There are quite a large number of possible summary statistics that could be calculated, however; mean, median, maximum, minimum, minority, and majority produce raster output that have correlations >95% as excpected, thus this script only saves the mean and minimum focal stats as these are needed for the relative elevation calculations. Sum is a funny derivative since I'm not sure how summing all of the values would be useful in this case, and it produces quite odd results. Variance and Standard deviation are very similar (as expected), so I just kept the standard deviation since it keeps the same units. Range and standard deviation have correlations of 0.98, so I kept the std dev since it is more interpretable I think. The percentile is a raster that I don't fully understand. Is this the percentile of the center cell in the neighborhood? At the very least this seems to do a good job of highlighting errors in the DEM. 
-
+REM Processing Notes: There are quite a large number of possible summary statistics that could be calculated, however; mean, median, maximum, minimum, minority, and majority produce raster output that have correlations >95% as excpected, thus this script only saves the mean and minimum focal stats as these are needed for the relative elevation calculations. Sum is a funny derivative since I'm not sure how summing all of the values would be useful in this case, and it produces quite odd results. Variance and Standard deviation are very similar (as expected), so I just kept the standard deviation since it keeps the same units. Range and standard deviation have correlations of 0.98, so I kept the std dev since it is more interpretable I think. The percentile is a raster that I don't fully understand. Is this the percentile of the center cell in the neighborhood? At the very least this seems to do a good job of highlighting errors in the DEM. 
 for %%i in (%neighbors%) do ( 
 echo now calculating multiscale focal statistics for a size %%i neighborhood
-saga_cmd statistics_grid 1 -GRID=%basedem% -MEAN=%desFol%meanelev_%%i.sgrd -MIN=%desFol%minelev_%%i.sgrd -DIFF=%desFol%diffmeanelev_%%i.sgrd -DEVMEAN=%desFol%devmeanelev_%%i.sgrd -RANGE%desFol%rangeelev_%%i.sgrd -STDDEV%desFol%stddevelev_%%i.sgrd -PERCENT%desFol%percntelev_%%i.sgrd -BCENTER=1 -KERNEL_TYPE=0 -KERNEL_RADIUS=%%i -DW_WEIGHTING=0
+saga_cmd statistics_grid 1 -GRID=%basedem% -MEAN=%desFol%meanelev_%%i.sgrd -MIN=%desFol%minelev_%%i.sgrd -DIFF=%desFol%diffmeanelev_%%i.sgrd -DEVMEAN=%desFol%devmeanelev_%%i.sgrd -STDDEV=%desFol%stddevelev_%%i.sgrd -PERCENT%desFol%percntelev_%%i.sgrd -BCENTER=1 -KERNEL_TYPE=0 -KERNEL_RADIUS=%%i -DW_WEIGHTING=0
 )
 echo %date%:%time%
 
@@ -314,7 +312,12 @@ echo %date%:%time%
 REM Convergence Index (search radius) ##########
 REM input: elevation
 REM parameters:
-REM choosing gradient (on/off) and difference (direction to the center cell or center cell's aspect direction didn't seem to have any effect on resulting values). Only the radius seems to have much of an influence.  
+  REM -SLOPE; also called gradient in the tool. This is boolean (default 0) and I have no idea what it does, so left as default. 
+  REM -DIFFERENCE; 0=direction to the center cell, 1=center cell's aspect direction. I'm not really sure of the difference so I chose the default value of 0
+  REM -RADIUS; the radius of the search neigborhood
+  REM -DW_WEIGHTING, 0 = no distance weighting
+REM Output: -CONVERGENCE; convergence index
+REM Processing Notes: choosing gradient (on/off) and difference (direction to the center cell or center cell's aspect direction) didn't seem to have any effect on resulting values). Only the radius seems to have much of an influence.  
 for %%i in (%neighbors%) do ( 
 echo now calculating convergence index for a size %%i neighborhood
  saga_cmd ta_morphometry 2 -ELEVATION=%basedem% -CONVERGENCE=%desFol%ci_%%i.sgrd -SLOPE=0 -DIFFERENCE=0 -RADIUS=%%i -DW_WEIGHTING=0
