@@ -295,8 +295,7 @@ REM Note: There are quite a large number of possible summary statistics that cou
 
 for %%i in (%neighbors%) do ( 
 echo now calculating multiscale focal statistics for a size %%i neighborhood
-saga_cmd statistics_grid 1 -GRID=%basedem% -MEAN=%desFol%meanelev_%%i.sgrd -MIN=%desFol%minelev_%%i.sgrd -DIFF=%desFol%diffmeanelev_%%i.sgrd 
--DEVMEAN=%desFol%devmeanelev_%%i.sgrd -BCENTER=1 -KERNEL_TYPE=0 -KERNEL_RADIUS=%%i -DW_WEIGHTING=0
+saga_cmd statistics_grid 1 -GRID=%basedem% -MEAN=%desFol%meanelev_%%i.sgrd -MIN=%desFol%minelev_%%i.sgrd -DIFF=%desFol%diffmeanelev_%%i.sgrd -DEVMEAN=%desFol%devmeanelev_%%i.sgrd -RANGE%desFol%rangeelev_%%i.sgrd -STDDEV%desFol%stddevelev_%%i.sgrd -PERCENT%desFol%percntelev_%%i.sgrd -BCENTER=1 -KERNEL_TYPE=0 -KERNEL_RADIUS=%%i -DW_WEIGHTING=0
 )
 echo %date%:%time%
 
