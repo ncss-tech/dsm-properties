@@ -123,16 +123,24 @@ REM parameters:
  REM Multiscale has has a multiscale factor, but I don't understand this
  REM -NDIRS Number of sectors (clockwise from north, how many pie shaped wedges to iterate over). 8 divides the compas into 45 degree angles
  REM -UNIT 0 = radians, 1 = degrees
- REM -NADIR=1 if set, output angels are the mean difference from nadir, or else a plane. I think this makes sense to set it.
+ REM -NADIR=1 if set, output angles are the mean difference from nadir, or else a plane. I left as default 1, which is the mean difference from nadir, rather than 0 which is the mean difference from a plane because when tested this had no influence on the results.
 REM Output: po = positive openness, no = negative openness
 REM Notes: positive and negative openness values are all very different. PO (and NO) rasters with radius values between 2 and 16 have a R2 =100 so it doesn't make sense to calculate for these radius'. The correlations begin to change after a radius of 32, however radius values between 32 and 256 are relativily similar. Thus I chose to use radius of 2, 32, and 128 as these have the lowest correlation (128 and 256 are very simlar, but 128 calculates faster). This should cover the whole spectrum for both positive and negative openess with a minimum computation time. 
 set radialLimit=2 32 256
 for %%i in (%radialLimit%) do (
 echo now calculating positive and negative openness for a size %%i neighborhood
-  saga_cmd ta_lighting 5 -DEM=%basedem% -POS=%desFol%po_%%i.sgrd -NEG=%desFol%no_%%i.sgrd -RADIUS=%%i -METHOD=1 -NDIRS=8 -UNIT=1 -NADIR=1
-   )
+saga_cmd ta_lighting 5 -DEM=%basedem% -POS=%desFol%po_%%i.sgrd -NEG=%desFol%no_%%i.sgrd -RADIUS=%%i -METHOD=1 -NDIRS=8 -UNIT=1 -NADIR=1
+)
 echo %date%:%time%
 
+REM differential openness: positive - negative openness
+REM Tool: Grid Difference between min and mean with base elevation to get relative elevation
+for %%i in (%neighbors%) do ( 
+echo now calculating differential openness for a neighborhood of %%i
+saga_cmd grid_calculus 3 -A=%desFol%po_%%i.sgrd -B=%desFol%no_%%i.sgrd -C=%desFol%diffopen_%%i.sgrd
+)
+
+echo %date%:%time%
 
 
 REM Vertical distance to channel network ##########
@@ -222,7 +230,7 @@ REM r.geomorphons in grassGIS has more parameters adjustable by the user
   REM I chose to use radius values of 30, 300, and 3000. There is not much difference between 300 and 3000 in areas with relief, but the difference becomes more pronounced in areas with relativley low relief. Because radius values are given in map units (ie. meters) then a value of 30 is only the four adjacent cells and not the full eight neighboorhood. To include the full eight neighboorhood it is possible to use the pythagorean theorem to solve for the distance from the center cell. This results in a distance of 42.4 m. However; I don't know exactly how geormophon algorithm accounts for cell centers so I think that I will just use radius values that are multiples of the cell size. 
  REM -METHOD, 0 = multiscale, 1 = line tracing. If 0, then use the -DLEVEL parameter, if 1 then use the -RADIUS parameter. 
  REM -DLEVEL, The multi-scale factor. A multi-scale factor of 3, 9, and 64 (with different -RADIUS just to check) did not make any difference in the results. However, a multiscale factor of 300 resulted in much more local results (it seems that the higher the dlevel the more local the results are). A factor of 3000 was too large on my test DEM so I just went with 300.   
-REM processing notes: line tracing (radial limit = 32) and multiscale (9 and 32) had a correlation of 50.1% This is the largest difference between any of the parameters, thus it seems that this is a critical choice. Since they produce two very different results I think that I will do both. I will do one multiscale (-DLEVEL 3, since this parameters doesn't make much difference), and one small and one large -RADIUS
+REM processing notes: line tracing (radial limit = 32) and multiscale (9 and 32) had a correlation of 50.1% This is the largest difference between any of the parameters, thus it seems that this is a critical choice. Since they produce two very different results I think that I will do both.
 set geomorph_L=30 300 3000
 for %%i in (%geomorph_L%) do (
 echo now calculating geomorphons for radius %%i
@@ -342,20 +350,20 @@ echo %date%:%time%
 	
 	
 REM Terrain Ruggedness Index ##########
-REM Explanation:
+REM Explanation: How rugged is the terrain, based on the square root of the average squared elevation differences between a center cell and all surrounding cells. 
 REM input: elevation
 REM parameters:
- REM radius in cells
- REM mode 0 = square, 1 = circle
+ REM -RADIUS; radius in cells
+ REM -MODE; 0 = square, 1 = circle
 for %%i in (%neighbors%) do ( 
 echo now calculating terrain rugedness index for a size %%i neighborhood
-  saga_cmd ta_morphometry 16 -DEM=%basedem% -TRI=%desFol%tri_%%i.sgrd -MODE=1 -RADIUS=%%i
+  saga_cmd ta_morphometry 16 -DEM=%basedem% -TRI=%desFol%tri_%%i.sgrd -MODE=0 -RADIUS=%%i
 )
 echo %date%:%time%
 
  
 REM Terrain Surface Convexity ##########
-REM Explanation:
+REM Explanation: What percentage of the neighborhood is convex. 
 REM input: elevation
 REM parameters:
  REM KERNEL=1 conventional eight neigboorhood 
@@ -373,20 +381,22 @@ echo %date%:%time%
   
   
 REM Mass Balance Index ##########
-REM Explanation:
-REM input: elevation
-REM parameters:
- REM TSLOPE = transformed slope. With Tcurve set to 0.01, I tried Tslope values of 1, 5, 15, 25. The correlation between a TSlope of 1 and the other slope thresholds was 99, 98, and 98 (5, 15, 25). Thus I concluded that this parameter was not very impactful in an area of moderate relief. 
- REM Tcurve = transformed curvature. With Tslope set to 15, I tried Tcurve values of 0.001, 0.01, 0.1. The correlation was 87.9 and 77.8 (but sigmoid in shape) between 0.001 and 0.01, and 0.1. This parameter seems to have more influence than Tslope.
+REM Explanation: MBI is calculated from elevation, slope, mean curvature, and vertical distance to channel network. “we assume that negative MBI values represent areas of net deposition such as depressions and floodplains; positive MBI values represent areas of net erosion such as hillslopes, and MBI values close to zero indicate areas where there is a balance between erosion and deposition such as low slopes and plain areas.” Moller et al 2008
+REM input: elevation, optional (vertical distance to channel network). 
+REM parameters (these parameters make more sense in Moller et al. 2008 equations 1 and 2). 
+ REM -HREL; vertical distance to channel network (relative elevation). Option input. Did not use because I was unsure which of the vertical distance to channel network grids to use. 
+ REM -TSLOPE; transformed slope. With Tcurve set to 0.01, I tried Tslope values of 1, 5, 15, 25. The correlation between a TSlope of 1 and the other slope thresholds was 99, 98, and 98 (5, 15, 25). Thus I concluded that this parameter was not very impactful in an area of moderate relief. 
+ REM Tcurve = transformed curvature. With Tslope set to 15, I tried Tcurve values of 0.001, 0.01, 0.1. The correlation was 87.9 and 77.8 (but sigmoid in shape) between 0.001 and 0.01, and 0.1. This parameter seems to have more influence than Tslope. The paper suggests that this is the most sensitive of the parameters "The comparison of the two MBI versions makes the outcome of the Tk values for MBI characteristic clear: the lower Tk, the greater the relative difference within the value range". 
  REM Tslope of 1 and Tcurve of 0.001 and Tslope of 25 and Tcurve of 0.1 produced a sigmoid correlation of 77.6 (pretty much the same as between the two Tcurve values. Thus this seems worth running with the two extreme curvature values. However; I think that an intermediate value might have more influence in flatter areas so I used three values.  
- REM THREL Transformed vertical distance to channel network. I don't think that I need this since vertical distance to channel network is not used, and in fact this has no influence on the resulting values.
+ REM THREL, threshold for transformed vertical distance to channel network. I don't think that I need this since the vertical distance to channel network is not used, and in fact this has no influence on the resulting values.
 set tcurve=0.001 0.01 0.1
 for %%i in (%tcurve%) do (
 echo now calculating mass balance index for a curvature of %%i
-saga_cmd ta_morphometry 10 -DEM=%basedem% -MBI=%desFol%mbi_%%i.sgrd -TSLOPE=15.0 -TCURVE=%%i
+saga_cmd ta_morphometry 10 -DEM=%basedem% -MBI=%desFol%mbi_%%i.sgrd -TSLOPE=15.0 -THREL=15.0 -TCURVE=%%i 
 )
 echo %date%:%time%
 
+saga_cmd ta_morphometry 10 -DEM=file -HREL=file -MBI=file -TSLOPE=15.000000 -TCURVE=0.010000 -THREL=15.000000
 
 	
 REM Saga wetness index, catchment area, modified catchment area, and catchment slope ##########
@@ -439,13 +449,13 @@ REM Vector Rugedness Measure
 REM Explanation: This "quantifies terrain ruggedness by measuring the variation in a three-dimensional orientation of grid cells within a moving window. Slope and aspect are decomposed into 3-dimensional vector components (in the x, y, and z directions) using standard vector analysis in a user-specified moving window size (3x3). The vector ruggedness measure quantifies local variation of slope in the terrain more independently than the topographic position index and terrain ruggedness index methods. Values range from 0 to 1 in flat to rugged regions, respectively" (Amatulli et al 2019. Geomorpho90m). 
 REM input: Elevation 
 REM Parameters
-	REM -MODE; 0=square, 1 = circle. I chose a circle because it seems more intuiative and it was the default. 
+	REM -MODE; 0=square, 1 = circle. I chose a square because it seems more intuiative (not trying to figure out if it captures cell centers or not) and most other covariates were set to be squares. 
 	REM -RADIUS; Radius in number of cells. I think that this makes sense to use the same neighborhood as other covariates. I tested a radius of 300, but that ran SUPER slow. 
 	REM -DW_WEIGHTING; distance weighting. 0 = no weighting, 1 = inverse distance to a power, 2 = exponential, 3 = gaussian. No reason to choose any of these weighting schemes. Choosing anything other than 0 allows the specification of individual parameters for each weighting scheme. 
 REM Output: Vector Ruggedness Measure
 for %%i in (%neighbors%) do (
 echo now calculating VRM for a radius of %%i 
-saga_cmd ta_morphometry 17 -DEM=%basedem% -VRM=%desFol%vrm_%%i.sgrd -MODE=1 -RADIUS=%%i -DW_WEIGHTING=0
+saga_cmd ta_morphometry 17 -DEM=%basedem% -VRM=%desFol%vrm_%%i.sgrd -MODE=0 -RADIUS=%%i -DW_WEIGHTING=0
 )
 echo %date%:%time%
 
@@ -508,6 +518,7 @@ REM saga_cmd ta_morphometry 8 -DEM=%basedem% -MRVBF=%desFol%mrvbf.sgrd -MRRTF=%d
 REM echo %date%:%time%
 
 REM Relative Heights and Slope Positions
+REM This tool can take several days to run
 REM This tool produces relative heights that are mainly focused on topo-climatology. I think that some of these could be useful for DSM, but I have decided to not produce these because the documentation is so very poor and I can't really understand the output. Here is what I think though: Slope Height (no idea), Valley Depth (not sure how this is different than the specific tool), Normalized height (relative height between zero (low) and one (high) with in a drainage, no idea how a drainage is defined), standardized height (elevation * normalized height?), mid-slope position (0 is midslope, 1 is either bottom of drainage or top of ridge). 
 REM Further explanation can be found at:
  REM https://gis.stackexchange.com/questions/154172/saga-tool-relative-heights-and-slope-positions-what-do-results-tell-me
@@ -520,7 +531,10 @@ REM parameters: w, t, e (see links above for further explanation).
  REM t set to 1, 10, 100; w kept at 0.5, e kept at 2. t = 1 ran for a long time but produced only a single value for each output. smaller values of t increase run time dramatically. Changing values of t had little influence on the outputs (r2 > 91) except for midslope position (r2 > 73). 
  REM e set to 0.2, 2, 20; w kept at 0.5, t kept at 100. e = 20 produced NaN. e of 0.2 and 2 produced the following correlations between parameter values for each output: slope height (r2 > 97), valley depth (r2 > 88), nomralized height (r2 > 86), standardized height (r2 > 95), midslope position (r2 > 68). 
 
-REM REM LS Factor
+REM Terrain Surface Texture
+REM did not produce results that were visually interpretable
+
+REM LS Factor
 REM LS Factor requires slope and catchment area. I decided against this because I feel that the input parameters (rill/interrill erosivity and stability) are mostly site-specific . Also, this is meant for run off modeling, not digital soil mapping or geomorphological mapping so it doesn't make a whole lot of sense to calculate it.  
 
 REM Morphometric Protection Index 
