@@ -328,7 +328,7 @@ REM Output: -CONVERGENCE; convergence index
 REM Processing Notes: choosing gradient (on/off) and difference (direction to the center cell or center cell's aspect direction) didn't seem to have any effect on resulting values). Only the radius seems to have much of an influence.  
 for %%i in (%neighbors%) do ( 
 echo now calculating convergence index for a size %%i neighborhood
- saga_cmd ta_morphometry 2 -ELEVATION=%basedem% -CONVERGENCE=%desFol%ci_%%i.sgrd -SLOPE=0 -DIFFERENCE=0 -RADIUS=%%i -DW_WEIGHTING=0
+ saga_cmd ta_morphometry 2 -ELEVATION=%basedem% -CONVERGENCE=%desFol%ci_%%i.sgrd -SLOPE=0 -DIFFERENCE=0 -DW_WEIGHTING=0 -RADIUS=%%i 
 )   
 echo %date%:%time%
 
@@ -344,7 +344,7 @@ REM In a way I don't like the multiscale TPI because I like having more control 
 set maxscale=2 16
 for %%i in (%maxscale%) do ( 
 echo now calculating multiscale TPI for a size %%i neighborhood  
-saga_cmd ta_morphometry 28 -DEM=%basedem% -TPI=%desFol%tpi_%%i -SCALE_MIN=1 -SCALE_MAX=%%i -SCALE_NUM=2
+saga_cmd ta_morphometry 28 -DEM=%basedem% -TPI=%desFol%tpi_%%i -SCALE_MIN=1 -SCALE_NUM=2 -SCALE_MAX=%%i 
 ) 
 echo %date%:%time% 
 	
