@@ -122,7 +122,7 @@ REM parameters:
  REM I think that line-tracing (rather than multiscale) makes a bit more sense as I have control over the radial limit.
  REM Multiscale has has a multiscale factor, but I don't understand this
  REM -NDIRS Number of sectors (clockwise from north, how many pie shaped wedges to iterate over). 8 divides the compas into 45 degree angles
- REM -UNIT 0 = radians, 1 = degrees
+ REM -UNIT 0 = radians, 1 = degrees. However; this does not seem to be implemented on the linux distribution so I think that units will be radians. 
  REM -NADIR=1 if set, output angles are the mean difference from nadir, or else a plane. I left as default 1, which is the mean difference from nadir, rather than 0 which is the mean difference from a plane because when tested this had no influence on the results.
 REM Output: po = positive openness, no = negative openness
 REM Notes: positive and negative openness values are all very different. PO (and NO) rasters with radius values between 2 and 16 have a R2 =100 so it doesn't make sense to calculate for these radius'. The correlations begin to change after a radius of 32, however radius values between 32 and 256 are relativily similar. Thus I chose to use radius of 2, 32, and 128 as these have the lowest correlation (128 and 256 are very simlar, but 128 calculates faster). This should cover the whole spectrum for both positive and negative openess with a minimum computation time. 
@@ -280,7 +280,7 @@ REM Tool: Focal Statistics ##########
 REM Input: Elevation
 REM Parameters
   REM run for several Kernal_radius values. Radius values are given in number of cells
-  REM -KERNEL_TYPE; shape of window; 1 = circle, 0 = square. Used square to keep this the same as other covariates. 
+  REM -KERNEL_TYPE (-MODE in linux); shape of window; 1 = circle, 0 = square. Used square to keep this the same as other covariates. 
   REM -KERNEL_RADIUS; size of radius
   REM -BCENTER; 1 means include center cell, 
   REM -DW_WEIGHTING=0 means no distance weighting
@@ -323,7 +323,7 @@ REM parameters:
   REM -SLOPE; also called gradient in the tool. This is boolean (default 0) and I have no idea what it does, so left as default. 
   REM -DIFFERENCE; 0=direction to the center cell, 1=center cell's aspect direction. I'm not really sure of the difference so I chose the default value of 0
   REM -RADIUS; the radius of the search neigborhood
-  REM -DW_WEIGHTING, 0 = no distance weighting
+  REM -DW_WEIGHTING (-DISTANCE_WEIGHTING_DW_WEIGHTING in linux), 0 = no distance weighting
 REM Output: -CONVERGENCE; convergence index
 REM Processing Notes: choosing gradient (on/off) and difference (direction to the center cell or center cell's aspect direction) didn't seem to have any effect on resulting values). Only the radius seems to have much of an influence.  
 for %%i in (%neighbors%) do ( 
