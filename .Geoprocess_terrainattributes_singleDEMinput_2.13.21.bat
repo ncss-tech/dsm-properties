@@ -281,7 +281,7 @@ REM Input: Elevation
 REM Parameters
   REM run for several Kernal_radius values. Radius values are given in number of cells
   REM -KERNEL_TYPE (-MODE in linux); shape of window; 1 = circle, 0 = square. Used square to keep this the same as other covariates. 
-  REM -KERNEL_RADIUS; size of radius
+  REM -KERNEL_RADIUS; size of radius (this is -RADIUS in Linux implementation). 
   REM -BCENTER; 1 means include center cell, 
   REM -DW_WEIGHTING=0 means no distance weighting
 REM Output
