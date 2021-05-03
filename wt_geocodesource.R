@@ -1,13 +1,17 @@
 #DSM Soil Properties Team
 # weighting levels by geocodesource and date range work flow
 # Dave White 03/31/21
-
+library(scales)
 
 setwd("D:/DSM_focus_team/PropertiesTeam/conusPedonData")
 
 #Bring in site date
 load("nasis_sites_20210325.RData")
+load("nasis_pedons_20210325.RData")
+names(spc)
 names(s)
+is.na(spc$classtype)
+spc$classtype
 
 # remove any observations where utmeasting, utmnorthing, x, y is all null thus removing any sites without location values, if all 4 of these are null there is no valid location data
 s.sub <- s[!with(s, is.na(utmeasting) & is.na(utmnorthing) & is.na(x) & is.na(y)),]
@@ -55,15 +59,17 @@ s8 <- subset(s.sub, s.sub$geocoordsource %in% c('estimated from other source', '
 
 
 # combine into one data.frame and assign wt_level
-s.wt <- rbind(data.frame(s1[1], wt = 1),
-              data.frame(s2[1], wt = 2),
-              data.frame(s3[1], wt = 3),
-              data.frame(s4[1], wt = 4),
-              data.frame(s5[1], wt = 5),
-              data.frame(s6[1], wt = 6),
-              data.frame(s7[1], wt = 7),
-              data.frame(s8[1], wt = 8))
+s.wt <- rbind(data.frame(s1[1], wt = 8),
+              data.frame(s2[1], wt = 7),
+              data.frame(s3[1], wt = 6),
+              data.frame(s4[1], wt = 5),
+              data.frame(s5[1], wt = 4),
+              data.frame(s6[1], wt = 3),
+              data.frame(s7[1], wt = 2),
+              data.frame(s8[1], wt = 1))
 
+
+s.wt$wt <- rescale(s.wt$wt)
 
 
 saveRDS(s.wt, "geocode_weighting.RDS")
@@ -71,6 +77,7 @@ saveRDS(s.wt, "geocode_weighting.RDS")
 #####################
 
 # condensed version if pre-processing steps are done, removing duplicates, removing null location data etc
+library(scales)
 
 #s.sub is the data.frame of site observations containing the peiid, geocodesource, and obsdate cols
 
@@ -89,12 +96,14 @@ s8 <- subset(s.sub, s.sub$geocoordsource %in% c('estimated from other source', '
 
 
 # combine into one data.frame and assign wt_level
-s.wt <- rbind(data.frame(s1[1], wt = 1),
-              data.frame(s2[1], wt = 2),
-              data.frame(s3[1], wt = 3),
-              data.frame(s4[1], wt = 4),
-              data.frame(s5[1], wt = 5),
-              data.frame(s6[1], wt = 6),
-              data.frame(s7[1], wt = 7),
-              data.frame(s8[1], wt = 8))
+s.wt <- rbind(data.frame(s1[1], wt = 8),
+              data.frame(s2[1], wt = 7),
+              data.frame(s3[1], wt = 6),
+              data.frame(s4[1], wt = 5),
+              data.frame(s5[1], wt = 4),
+              data.frame(s6[1], wt = 3),
+              data.frame(s7[1], wt = 2),
+              data.frame(s8[1], wt = 1))
 
+
+s.wt$wt <- rescale(s.wt$wt)
