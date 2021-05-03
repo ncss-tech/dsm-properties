@@ -122,7 +122,7 @@ bw <- function(ref_df, obs_df, vars, probs) {
   # tidy variables
   ref_df <- ref_df[vars]
   obs_df <- obs_df[vars]
-  
+
   
   # count inputs
   n_ref   <- ncol(ref_df)
@@ -167,7 +167,7 @@ bw <- function(ref_df, obs_df, vars, probs) {
   ref_brks$interval <- apply(ref_brks[vars], 1, paste0, collapse = "-")
   
   ref_pct <- lapply("interval", function(x) {
-    temp           <- round(prop.table(table(ref_brks[x])) * 100, 4)
+    temp           <- prop.table(table(ref_brks[x])) * 100
     temp           <- as.data.frame.table(temp)
     temp$Var1      <- as.character(temp$Var1)
     names(temp)[1] <- "interval"
@@ -193,7 +193,7 @@ bw <- function(ref_df, obs_df, vars, probs) {
   obs_brks$interval <- apply(obs_brks[vars], 1, paste0, collapse = "-")
   
   obs_pct <- lapply("interval", function(x) {
-    temp           <- round(prop.table(table(obs_brks[x])) * 100, 4)
+    temp           <- prop.table(table(obs_brks[x])) * 100
     temp           <- as.data.frame.table(temp)
     temp$Var1      <- as.character(temp$Var1)
     names(temp)[1] <- "interval"
