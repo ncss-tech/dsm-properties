@@ -8,7 +8,7 @@ library(dplyr)
 setwd("G:/100m_covariates")
 
 
-# load pedons
+# load pedons ----
 pts <- readRDS("CONUS_nasis_SSURGO_SG100_covarsc.rds")
 pts <- st_as_sf(pts,
                 coords = c("x", "y"),
@@ -16,7 +16,7 @@ pts <- st_as_sf(pts,
 )
 
 
-# load rasters
+# load rasters ----
 lf <- list.files("G:/100m_covariates", pattern = ".tif$", full.names = TRUE)
 
 vars_l <- list(
@@ -34,7 +34,7 @@ vars <- paste0("G:/100m_covariates/", unlist(vars_l), ".tif")
 rs <- stack(vars[-9]) #, function(x) raster(x))
 
 
-# sample rasters
+# sample rasters ----
 set.seed(42)
 npixels <- 1563535900
 # npixels <- 10000
@@ -71,11 +71,11 @@ samp <- readRDS(file = "samp_random.RDS")
 library(terra)
 
 samp_xy <- st_coordinates(samp)
-samp_xy <- samp_xy[sample(1:nrow(samp_xy), 1000), ]
+samp_xy <- samp_xy[sample(1:nrow(samp_xy), 500000), ]
 samp_v <- vect(samp_xy)
 crs(samp_v) <- "+init=epsg:5070"
 
-rs <- rast(vars[-9])
+rs <- rast(lf[-102])
 Sys.time()
 rs_s <- extract(rs, samp_v)
 Sys.time()
@@ -94,7 +94,7 @@ ref_df <- readRDS(file = "rs_sample.RDS")
 # test <- exact_extract(rs, pts, "mean")
 
 
-# transform pts and rasters
+# transform pts and rasters ----
 obs_df <- as.data.frame(pts)
 ppt_idx  <- names(obs_df) %in% vars_l$PPT[-1]
 temp_idx <- names(obs_df) %in% vars_l$TEMP
@@ -104,7 +104,7 @@ obs_df$TEMP <- apply(obs_df[temp_idx], 1, mean, na.rm = TRUE)
 obs_df$EVI  <- apply(obs_df[evi_idx],  1, mean, na.rm = TRUE)
 # obs_df$PM   <- as.factor(obs_df$PMTGSS7)
 
-
+ref_df    <- as.data.frame(ref_df)
 ppt_idx   <- names(ref_df) %in% vars_l$PPT[-1]
 temp_idx  <- names(ref_df) %in% vars_l$TEMP
 evi_idx   <- names(ref_df) %in% vars_l$EVI
@@ -116,16 +116,7 @@ ref_df$EVI  <- apply(ref_df[evi_idx],  1, mean, na.rm = TRUE)
 
 
 
-# tabulate raster
-vars <- c("SLPNED6", "POSNED6", "EVI", "PPT", "TEMP")
-p1 <- seq(0, 1, 0.1)
-p2 <- seq(0, 1, 0.5)
-probs <- list(p1, p2, p1, p1, p1)
-names(probs) <- vars
-
-
-
-# function to balance weights
+# function to balance weights ----
 bw <- function(ref_df, obs_df, vars, probs) {
   
   # tidy variables
@@ -156,14 +147,18 @@ bw <- function(ref_df, obs_df, vars, probs) {
   
   # tabulate ref
   brks <- lapply(vars, function(x) {
-    quantile(ref_df[, x], probs = probs[[x]], na.rm = TRUE)
-    })
+    if (is.numeric(ref_df[, x])) {
+      quantile(ref_df[, x], probs = probs[[x]], na.rm = TRUE)
+    } else levels(as.factor(ref_df[, x]))
+  })
   names(brks) <- vars
   
   ref_brks <- ref_df
   ref_brks[1:n_ref] <- lapply(vars, function(x) {
-    brks <- quantile(ref_df[x], probs = probs[[x]], na.rm = TRUE)
-    as.integer(cut(ref_df[, x], breaks = unique(brks), include.lowest = TRUE))
+    if (is.numeric(ref_df[, x])) {
+      # brks <- quantile(ref_df[x], probs = probs[[x]], na.rm = TRUE)
+      as.integer(cut(ref_df[, x], breaks = unique(brks[[x]]), include.lowest = TRUE))
+    } else as.integer(ref_df[, x])
     })
   ref_brks$source <- "ref"
   ref_brks[1:n_ref] <- lapply(vars, function(x) {
@@ -187,7 +182,9 @@ bw <- function(ref_df, obs_df, vars, probs) {
   # tabulate obs
   obs_brks <- obs_df
   obs_brks[1:n_obs] <- lapply(vars, function(x) {
-    as.integer(cut(obs_df[, x], breaks = unique(brks[[x]]), include.lowest = TRUE))
+    if (is.numeric(obs_df[, x])) {
+      as.integer(cut(obs_df[, x], breaks = unique(brks[[x]]), include.lowest = TRUE))
+    } else as.integer(obs_df[, x])
   })
   obs_brks$source <- "obs"
   obs_brks[1:n_obs] <- lapply(vars, function(x) {
@@ -216,8 +213,10 @@ bw <- function(ref_df, obs_df, vars, probs) {
   }
   
   df$wts <- cw(df$Freq.x, df$Freq.y)
-  # df$wts2 <- scale(df$wts + min(df$wts, na.rm = TRUE) * -1, center = FALSE)
+  # df$wts2 <- df$wts + min(df$wts, na.rm = TRUE) * -1
+  # df$wts2 <- df$wts2 / max(df$wts2, na.rm = TRUE)
   df$wts <- ifelse(df$wts < 0.01, 0.01, df$wts)
+  df$wts2 <- df$wts / max(df$wts, na.rm = TRUE)
   
   
   # merge results and tidy
@@ -226,9 +225,17 @@ bw <- function(ref_df, obs_df, vars, probs) {
   obs_df   <- obs_df[order(obs_df$id), ]
   ref_df$id <- NULL
   
-  return(wts = ref_df$wts)
+  return(list(wts = obs_df$wts, brks = brks))
 }
 
+
+# calculate weights
+vars <- c("SLPNED6", "POSNED6", "EVI", "PPT", "TEMP")
+p1 <- seq(0, 1, 0.1)
+p2 <- seq(0, 1, 0.5)
+probs <- list(p1, p2, p1, p1, p1, NULL)
+names(probs) <- vars
+obs_df$wts <- bw(ref_df, obs_df, vars, probs)$wts
 
   
 # plot
