@@ -208,15 +208,16 @@ bw <- function(ref_df, obs_df, vars, probs) {
   df <- merge(ref_pct, obs_pct, by = c("interval"), all.x = TRUE)
   
   cw <- function(ref, obs) {
-    pct <- 1 - round(obs / ref, 4) + 1
+    # pct <- 1 - (obs / ref) + 1
+    pct <- ref / obs # or 1 / (obs / ref)
     return(pct)
   }
   
   df$wts <- cw(df$Freq.x, df$Freq.y)
   # df$wts2 <- df$wts + min(df$wts, na.rm = TRUE) * -1
   # df$wts2 <- df$wts2 / max(df$wts2, na.rm = TRUE)
-  df$wts <- ifelse(df$wts < 0.01, 0.01, df$wts)
-  df$wts2 <- df$wts / max(df$wts, na.rm = TRUE)
+  # df$wts <- ifelse(df$wts < 0.01, 0.01, df$wts)
+  # f$wts2 <- df$wts / max(df$wts, na.rm = TRUE)
   
   
   # merge results and tidy
