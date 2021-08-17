@@ -376,7 +376,7 @@ REM Explanation:
 REM input: slope (in radians), catchment area (in specific catchment area). 
 REM parameters:
  REM slope must be in units of radians (-UNIT_SLOPE = 0)
- REM -METHOD=1 is maximum triangle slope (Tarboton 1997, I favor this because Tarboton was on my graduate committee, but there are other options)
+ REM -METHOD=6 is the default 9 parameter 2nd order polynomial of Zevenbergen and Thorne, 1987. Do NOT USE -METHOD=1maximum triangle slope (Tarboton 1997) because this produces NULL values, when then results in NULL values for topographic wetness index and stream power index).
 saga_cmd ta_morphometry 0 -ELEVATION=%basedem% -SLOPE=%desFol%slopeRadians.sgrd -METHOD=1 -UNIT_SLOPE=0
  REM catchment area can be taken from the saga output. It doesn't really matter which suction is used for the catchment area calculation because the output is the same. 
  REM area converstion 0) no converstion (areas already given as specific catchment area), 1) 1/cell size (psuedo specific catchment area). The choice of these options depends on how you catchment area in other tools. 
