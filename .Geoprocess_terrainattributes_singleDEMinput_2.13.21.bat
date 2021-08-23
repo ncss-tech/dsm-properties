@@ -179,7 +179,7 @@ REM Change grid values.
  REM The vertical distance to channel network grid has a number of negative values because of the way that the base level interpolation is handled. Change these values to 0, which is what they should be.
 REM Input: 
 	REM vertical distance to channel network (from tool output)
-	REM Look up tabl that indicates which values should be reclassified and what they should be changed to. The easiset way to create this is from the SAGA gui for this tool which lets you save the table in the right format. 
+	REM Look up table that indicates which values should be reclassified and what they should be changed to. The easiset way to create this is from the SAGA gui for this tool which lets you save the table in the right format. 
 REM Output; the input file with the values now reclassified.  
 for %%i in (%orders%) do (
 saga_cmd grid_tools 12 -INPUT=%desFol%vdcn_%%i.sgrd -OUTPUT=%desFol%vdcn_%%i.sgrd -METHOD=1 -RANGE=LUT
@@ -209,10 +209,10 @@ saga_cmd ta_channels 7 -ELEVATION=%basedem% -VALLEY_DEPTH=%desFol%vd_%%i.sgrd -R
 )
 echo %date%:%time%
 REM Change grid values. 
- REM The valley depth grid has a number of negative values because of the way that the base level interpolation is handled. Change these values to 0, which is what they should be.
+ REM The valley depth grid has a number of negative values because of the way that the ridge level interpolation is handled. Change these values to 0, which is what they should be.
 REM Input: 
 	REM valley depth (from tool output)
-	REM Look up tabl that indicates which values should be reclassified and what they should be changed to. The easiset way to create this is from the SAGA gui for this tool which lets you save the table in the right format. 
+	REM Look up table that indicates which values should be reclassified and what they should be changed to. The easiset way to create this is from the SAGA gui for this tool which lets you save the table in the right format. 
 REM Output; the input file with the values now reclassified.  
 for %%i in (%orders%) do (
 saga_cmd grid_tools 12 -INPUT=%desFol%vd_%%i.sgrd -OUTPUT=%desFol%vd_%%i.sgrd -METHOD=1 -RANGE=LUT
