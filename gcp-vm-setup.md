@@ -17,7 +17,7 @@ vm name = vm_smroecker_e2-standard-32_ubuntu18-rstudio machine type = e2-standar
 
 ```{bash}
 
-gcloud compute instances create instance-1 --project=ncss-30m-covariates --zone=us-central1-a --machine-type=e2-standard-32 --network-interface=network-tier=PREMIUM,subnet=default --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=189168473314-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/cloud-platform --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220616,mode=rw,size=10000,type=projects/ncss-30m-covariates/zones/us-central1-a/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+gcloud compute instances create instance-1 --project=ncss-30m-covariates --zone=us-central1-a --machine-type=e2-standard-32 --network-interface=network-tier=PREMIUM,subnet=default --maintenance-policy=MIGRATE --provisioning-model=STANDARD --scopes=https://www.googleapis.com/auth/cloud-platform --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220616,mode=rw,size=10000,type=projects/ncss-30m-covariates/zones/us-central1-a/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
 
 ```
 
