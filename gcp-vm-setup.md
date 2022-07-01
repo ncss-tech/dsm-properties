@@ -38,7 +38,7 @@ sudo apt -y install r-base r-base-dev
 ### Installs applications required for GIS R packages (e.g. sf, terra)
 
 ```{bash}
-sudo apt-get install libudunits2-dev libgdal-dev libgeos-dev libproj-dev libmysqlclient-dev 
+sudo apt-get install libudunits2-dev libgdal-dev libgeos-dev libproj-dev libmysqlclient-dev libjq-dev libprotobuf-dev protobuf-compiler
 ```
 
 ### Install current version of R (<https://cloud.r-project.org/>)
