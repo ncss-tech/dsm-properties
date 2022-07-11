@@ -90,8 +90,9 @@ See the following [link](https://medium.com/google-cloud/set-up-anaconda-under-g
 
 ### Install GCSFuse
 
-See the following [link](https://cloud.google.com/storage/docs/gcs-fuse). This other [link](https://isb-cancer-genomics-cloud.readthedocs.io/en/latest/sections/gcp-info/WorkflowWithGCSFUSE.html) was helpfull also.
+See the following [link](https://cloud.google.com/storage/docs/gcs-fuse). This other [link](https://isb-cancer-genomics-cloud.readthedocs.io/en/latest/sections/gcp-info/WorkflowWithGCSFUSE.html) was helpful also.
 
+gcsfuse 100m-variables-all ./cov100/
 
 ### Log into RStudio Server
 
