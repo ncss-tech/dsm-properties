@@ -7,7 +7,7 @@ load(file = "G:/Box/Box Sync/data/LDM-compact_20200709.RData")
 lp <- ldm_bs; rm(ldm_bs)
 
 lp_s <- site(lp)
-lp_s <- subset(lp_s, !duplicated(pedlabsampnum))
+lp_s <- subset(lp_s, !duplicated(pedlabsampnum) | is.na(pedlabsampnum))
 nrow(lp_s)
 
 
@@ -46,13 +46,14 @@ fp_s_sf$geometry <- NULL
 fp_s <- merge(fp_s, fp_s_sf, by = "peiid", all.x = TRUE)
 fp_s <- merge(fp_s, fp_h_s,  by = "peiid", all.x = TRUE)
 
-fp_s <- with(fp_s, fp_s[order(siteiid, pedlabsampnum, rcasiteid), ])
+fp_s <- with(fp_s, fp_s[order(siteiid, peiid, pedlabsampnum, rcasiteid), ])
 
 # remove duplicates
 fp_s_sub <- subset(
   fp_s, 
   !duplicated(pedlabsampnum, incomparables = NA)
-  & !duplicated(paste(pedlabsampnum, X, Y, Z))
+  & !duplicated(peiid, incomparables = NA)
+  & !duplicated(paste(X, Y, Z, pedlabsampnum), incomparables = NA)
   )
 
 idx <- !is.na(fp_s_sub$pedlabsampnum) &
