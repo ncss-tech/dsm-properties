@@ -58,10 +58,10 @@ sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_
 sudo apt install --no-install-recommends r-base
 ```
 
-### Install software necessary for the tidyverse
+### Install software necessary for the tidyverse and others
 
 ```{bash}
-sudo apt-get install libcurl4-openssl-dev libssl-dev libxml2-dev
+sudo apt-get install libcurl4-openssl-dev libssl-dev libxml2-dev libfontconfig1-dev
 ```
 
 ### Install RStudio 
