@@ -88,17 +88,14 @@ sudo passwd stephen_roecker
 See the following [link](https://medium.com/google-cloud/set-up-anaconda-under-google-cloud-vm-on-windows-f71fc1064bd7).
 
 
-### Install GCSFuse
-
-See the following [link](https://cloud.google.com/storage/docs/gcs-fuse). This other [link](https://isb-cancer-genomics-cloud.readthedocs.io/en/latest/sections/gcp-info/WorkflowWithGCSFUSE.html) was helpful also.
-
-gcsfuse 100m-variables-all ./cov100/
 
 ### Log into RStudio Server
 
 -   Start the VM
 -   Copy the External IP, paste into a browser window, and append the IP address with ":8787"
 -   Login with the username and password you created
+
+The `googleCloudStorageR` package can be used to load data from buckets, but `gcsfuse` is faster and can load raster files without having to parse them from their raw format. Before data can be accessed using `googleCloudStorageR` a .json key needs to be created by going to APIs & Services/Cloud Storage/Service Accounts.
 
 ```{r}
 auth <- "../ncss-30m-covariates-a4b6d9ca3712.json"
@@ -119,12 +116,44 @@ gcs_global_bucket("100m-variables-all")
 objects <- gcs_list_objects()
 
 
-test <- gcs_get_object("covariates/BARL10.tif", parseFunction = raster) # From Dave White
+test <- gcs_get_object("covariates/BARL10.tif")
 
 
 idx <- grepl(".tif$", objects$name) & grepl("^covariates/", objects$name)
 objects$name[idx]
 ```
+
+
+
+### Install GCSFuse
+
+See the following [link](https://cloud.google.com/storage/docs/gcs-fuse). This other [link](https://isb-cancer-genomics-cloud.readthedocs.io/en/latest/sections/gcp-info/WorkflowWithGCSFUSE.html) was helpful also.
+
+Prior to mounting a GCP bucket, create a folder within the VM to mount it too (this can be done within the RStudio File tab).
+
+Within the RStudio Terminal, run the following command.
+
+gcsfuse 100m-variables-all ./cov100/
+
+Use the --implicit-dirs flag if the folders within the GCP bucket weren't setup within gcsfuse.
+
+gcsfuse --implicit-dirs 30m-terrain-variables ./30m-terrain-variables 
+
+Once a bucket has been mounted, a raster file can be easily read like so.
+
+```{r}
+
+test <- rast("./30m-terrain-variables/covs30m/aspct_16.tif")
+
+```
+
+To unmount a bucket, use the following command from the Terminal.
+
+fusermount -u ./100m-variables-all
+fusermount -u ./30m-terrain-variables
+fusermount -u ./30m-spectral-variables
+
+Beware, buckets can only accessed from VMs within the same project.
 
 
 ## Other GCP options
